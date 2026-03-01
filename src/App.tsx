@@ -163,16 +163,14 @@ export default function App() {
       const allTracks = await fetchAllTracks('angelgirlbrianna');
       setTracks(allTracks);
       
-      if (allTracks.length > 0 && currentTrackIndex === -1) {
-        setCurrentTrackIndex(0);
-      }
+      setCurrentTrackIndex(prev => (prev === -1 && allTracks.length > 0 ? 0 : prev));
     } catch (error) {
       console.error('Failed to load tracks:', error);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [currentTrackIndex]);
+  }, []); // Removed currentTrackIndex dependency
 
   // Fetch tracks on mount
   useEffect(() => {
@@ -225,14 +223,22 @@ export default function App() {
   }, [volume]);
 
   useEffect(() => {
-    if (audioRef.current && currentTrack) {
-      if (isPlaying) {
-        audioRef.current.play().catch(e => console.error('Playback failed:', e));
-      } else {
+    const playAudio = async () => {
+      if (audioRef.current && currentTrack && isPlaying) {
+        try {
+          await audioRef.current.play();
+        } catch (e) {
+          console.error('Playback failed:', e);
+          // Some browsers block auto-play without user interaction
+          // If it fails, we keep isPlaying as true but the user might need to click play
+        }
+      } else if (audioRef.current && !isPlaying) {
         audioRef.current.pause();
       }
-    }
-  }, [isPlaying, currentTrackIndex]);
+    };
+
+    playAudio();
+  }, [isPlaying, currentTrackIndex, currentTrack?.audioUrl]);
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -767,7 +773,6 @@ export default function App() {
       {/* Hidden Audio Element */}
       {currentTrack && (
         <audio
-          key={currentTrack.audioUrl}
           ref={audioRef}
           src={cachedUrls[currentTrack.audioUrl] || currentTrack.audioUrl}
           onTimeUpdate={handleTimeUpdate}
