@@ -29,8 +29,8 @@ import { fetchAllTracks } from './services/iaService';
 
 const CACHE_NAME = 'angel-girl-brianna-music-cache';
 // USER: Place your icon as 'logo.png' in the /public/assets folder
-const APP_ICON_URL = 'assets/logo.png'; 
-const APP_BANNER_URL = 'assets/banner.png';
+const APP_ICON_URL = '/assets/logo.png'; 
+const APP_BANNER_URL = '/assets/banner.png';
 
 interface Notification {
   id: string;
@@ -42,7 +42,7 @@ function AppLogo({ className = "w-10 h-10" }: { className?: string }) {
   return (
     <div className={`${className} rounded-full overflow-hidden bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center border border-white/20 shadow-lg shadow-emerald-500/20`}>
       {APP_ICON_URL ? (
-        <img src={APP_ICON_URL} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        <img src={APP_ICON_URL} alt="Logo" className="w-full h-full object-cover" />
       ) : (
         <Heart className="w-1/2 h-1/2 text-white fill-current" />
       )}
