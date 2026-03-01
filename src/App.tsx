@@ -29,8 +29,8 @@ import { fetchAllTracks } from './services/iaService';
 
 const CACHE_NAME = 'angel-girl-brianna-music-cache';
 // USER: Place your icon as 'logo.png' in the /public/assets folder
-const APP_ICON_URL = '/assets/logo.png'; 
-const APP_BANNER_URL = '/assets/banner.png';
+const APP_ICON_URL = 'assets/logo.png'; 
+const APP_BANNER_URL = 'assets/banner.png';
 
 interface Notification {
   id: string;
