@@ -28,9 +28,9 @@ import { IATrack, RepeatMode, AppSettings } from './types';
 import { fetchAllTracks } from './services/iaService';
 
 const CACHE_NAME = 'angel-girl-brianna-music-cache';
-// USER: Place your icon as 'logo.png' in the /public folder
-const APP_ICON_URL = '/logo.png'; 
-const APP_BANNER_URL = '/banner.png';
+// USER: Place your icon as 'logo.png' in the /public/assets folder
+const APP_ICON_URL = 'assets/logo.png'; 
+const APP_BANNER_URL = 'assets/banner.png';
 
 interface Notification {
   id: string;
@@ -224,21 +224,43 @@ export default function App() {
 
   useEffect(() => {
     const playAudio = async () => {
-      if (audioRef.current && currentTrack && isPlaying) {
+      if (!audioRef.current) return;
+
+      if (isPlaying) {
         try {
-          await audioRef.current.play();
-        } catch (e) {
-          console.error('Playback failed:', e);
-          // Some browsers block auto-play without user interaction
-          // If it fails, we keep isPlaying as true but the user might need to click play
+          // Check if we're already playing or if we can play
+          if (audioRef.current.paused) {
+            await audioRef.current.play();
+          }
+        } catch (e: any) {
+          if (e.name !== 'AbortError') {
+            console.error('Playback failed:', e);
+          }
         }
-      } else if (audioRef.current && !isPlaying) {
+      } else {
         audioRef.current.pause();
       }
     };
 
     playAudio();
-  }, [isPlaying, currentTrackIndex, currentTrack?.audioUrl]);
+  }, [isPlaying]);
+
+  // Handle track changes separately
+  useEffect(() => {
+    if (audioRef.current && currentTrack) {
+      audioRef.current.load();
+      if (isPlaying) {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(e => {
+            if (e.name !== 'AbortError') {
+              console.error('Track change playback failed:', e);
+            }
+          });
+        }
+      }
+    }
+  }, [currentTrackIndex]);
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -778,10 +800,22 @@ export default function App() {
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleNext}
           onLoadedMetadata={handleTimeUpdate}
-          onError={(e) => {
-            console.error('Audio playback error:', e);
+          onCanPlay={() => {
+            if (isPlaying && audioRef.current && audioRef.current.paused) {
+              audioRef.current.play().catch(e => {
+                if (e.name !== 'AbortError') console.error('onCanPlay playback failed:', e);
+              });
+            }
           }}
-          referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.target as HTMLAudioElement;
+            console.error('Audio playback error:', target.error);
+            // If it's a source error, try to skip to next
+            if (target.error?.code === 4 || target.error?.code === 3) {
+              addNotification('Error loading track. Skipping...', 'error');
+              setTimeout(handleNext, 2000);
+            }
+          }}
         />
       )}
     </div>
